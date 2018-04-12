@@ -7,6 +7,7 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import JSONRPC2.Identifier (Identifier(..))
+import JSONRPC2.Request (Request(..))
 import JSONRPC2.Request as Request
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -14,7 +15,7 @@ import Test.Spec.Assertions (shouldEqual)
 requestSpec :: forall r. Spec r Unit
 requestSpec =
   describe "Request" do
-    let reqArrayParams = {
+    let reqArrayParams = Request {
             id: Just $ IdStr "stringId"
           , method: "some method"
           , params: Just $ Request.PArray [Json.fromString "StringParam", Json.fromNumber (123.456)]

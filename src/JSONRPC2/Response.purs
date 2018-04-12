@@ -14,7 +14,7 @@ import Data.StrMap as SM
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
 import JSONRPC2.Identifier as Identifier
-import JSONRPC2.Request (Params, Request)
+import JSONRPC2.Request (Params, Request(..))
 
 data Response = Response Identifier (Either Error Result)
 
@@ -162,6 +162,6 @@ respond
   :: ({ method :: String, params :: Maybe Params } -> Either Error Result)
   -> Request
   -> Maybe Response
-respond f { id, method, params } = case id of
+respond f (Request { id, method, params }) = case id of
   Just id' -> Just $ Response id' $ f { method, params }
   Nothing -> Nothing

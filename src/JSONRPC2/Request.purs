@@ -6,20 +6,30 @@ import Data.Argonaut.Core (JArray, JObject, Json)
 import Data.Argonaut.Core as Json
 import Data.Array as A
 import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Eq (genericEq)
+import Data.Generic.Rep.Ord (genericCompare)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe, maybe)
-import Data.Record.Extra (showRecord)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (class Newtype)
 import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
 import JSONRPC2.Identifier as Id
 
-type Request = {
+newtype Request = Request {
     id :: Maybe Identifier
   , method :: String
   , params :: Maybe Params
 }
+derive instance newtypeRequest :: Newtype Request _
+derive instance genericRequest :: Generic Request _
+instance showRequest :: Show Request where
+  show = genericShow
+instance eqRequest :: Eq Request where
+  eq = genericEq
+instance ordRequest :: Ord Request where
+  compare = genericCompare
 
 data Params = PArray JArray | PObject JObject
 derive instance eqParams :: Eq Params
@@ -29,9 +39,8 @@ instance showParams :: Show Params where
   show = genericShow
 
 toJson :: Request -> Json
-toJson = Json.fromObject <<< toJObject
+toJson (Request req) = Json.fromObject $ toJObject req
   where
-  toJObject :: Request -> JObject
   toJObject {method, params, id} = StrMap.fromFoldable $ [
         (Tuple Constants.protocolKey $ Json.fromString Constants.protocolValue)
       , (Tuple "method" $ Json.fromString method)
@@ -49,5 +58,7 @@ paramsToJson :: Params -> Json
 paramsToJson (PArray jarr) = Json.fromArray jarr
 paramsToJson (PObject jobj) = Json.fromObject jobj
 
-toString :: Request -> String
-toString = showRecord
+paramsFromJson :: Json -> Maybe Params
+paramsFromJson json = case Json.toArray json of
+  Just jarr -> Just $ PArray jarr
+  Nothing -> PObject <$> Json.toObject json
