@@ -75,15 +75,15 @@ errorCodeExplanation = case _ of
   CodeOther n -> "Other error (check message): " <> show n
 
 data ResponseFormatError =
-    NonObjectError
-  | MissingProtocolError
-  | InvalidProtocolTypeError Json
-  | InvalidProtocolError String
-  | BothResultAndErrorError
-  | MissingResultOrErrorError
-  | InvalidErrorJson Json
-  | MissingIdError
-  | InvalidIdTypeError Json
+    ErrorNonObject
+  | ErrorMissingProtocol
+  | ErrorInvalidProtocolType Json
+  | ErrorInvalidProtocol String
+  | ErrorBothResultAndError
+  | ErrorMissingResultOrError
+  | ErrorInvalidJson Json
+  | ErrorMissingId
+  | ErrorInvalidIdType Json
 derive instance eqResponseFormatError :: Eq ResponseFormatError
 derive instance ordResponseFormatError :: Ord ResponseFormatError
 derive instance genericResponseFormatError :: Generic ResponseFormatError _
@@ -92,37 +92,37 @@ instance showResponseFormatError :: Show ResponseFormatError where
 
 fromJson :: Json -> Either ResponseFormatError Response
 fromJson json = do
-  respMap <- note NonObjectError $ Json.toObject json
+  respMap <- note ErrorNonObject $ Json.toObject json
   checkProtocol respMap
   Response <$> getId respMap <*> getResultOrError respMap
 
   where
 
   checkProtocol respMap = do
-    protocolJson <- note MissingProtocolError
+    protocolJson <- note ErrorMissingProtocol
       $ SM.lookup Constants.protocolKey respMap
-    protocolStr <- note (InvalidProtocolTypeError protocolJson)
+    protocolStr <- note (ErrorInvalidProtocolType protocolJson)
       $ Json.toString protocolJson
     if protocolStr == Constants.protocolValue
       then Right unit
-      else Left $ InvalidProtocolError protocolStr
+      else Left $ ErrorInvalidProtocol protocolStr
 
   getId respMap = do
-     idJson <- note MissingIdError $ SM.lookup Constants.idKey respMap
-     note (InvalidIdTypeError idJson) $ Identifier.fromJson idJson
+     idJson <- note ErrorMissingId $ SM.lookup Constants.idKey respMap
+     note (ErrorInvalidIdType idJson) $ Identifier.fromJson idJson
 
   getResultOrError respMap =
     let mResult = SM.lookup "result" respMap
         mError = SM.lookup "error" respMap
     in case mResult, mError of
-         Just result, Just error -> Left BothResultAndErrorError
+         Just result, Just error -> Left ErrorBothResultAndError
          Nothing, Just errJson -> Left <<< Error <$> getError errJson
          Just result, Nothing -> Right $ Right $ Result result
-         Nothing, Nothing -> Left MissingResultOrErrorError
+         Nothing, Nothing -> Left ErrorMissingResultOrError
 
     where
 
-    getError errJson = note (InvalidErrorJson errJson) do
+    getError errJson = note (ErrorInvalidJson errJson) do
        errMap <- Json.toObject errJson
        let d = SM.lookup "data" errMap
        code <- errorCodeFromNumber
