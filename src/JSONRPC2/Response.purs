@@ -6,10 +6,12 @@ import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as Json
 import Data.Either (Either(..), note)
 import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Eq (genericEq)
+import Data.Generic.Rep.Ord (genericCompare)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Int (fromNumber)
 import Data.Maybe (Maybe(..), maybe')
-import Data.Record.Extra (eqRecord, compareRecord, showRecord)
+import Data.Newtype (class Newtype)
 import Data.StrMap as SM
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
@@ -18,42 +20,25 @@ import JSONRPC2.Request (Params, Request(..))
 
 data Response = Response Identifier (Either Error Result)
 
-instance eqResponse :: Eq Response where
-  eq (Response id1 errRes1) (Response id2 errRes2) =
-    id1 == id2 && eq' errRes1 errRes2
+derive instance eqResponse :: Eq Response
+derive instance ordResponse :: Ord Response
+derive instance genericResponse :: Generic Response _
+instance showReponse :: Show Response where
+  show = genericShow
 
-    where
-    eq' (Left _) (Right _) = false
-    eq' (Right _) (Left _) = false
-    eq' (Left err1) (Left err2) = eqRecord err1 err2
-    eq' (Right res1) (Right res2) = res1 == res2
-
-instance ordResponse :: Ord Response where
-  compare (Response id1 errRes1) (Response id2 errRes2) =
-    case compare id1 id2 of
-         EQ -> compare' errRes1 errRes2
-         ord -> ord
-
-    where
-    compare' (Left _) (Right _) = LT
-    compare' (Right _) (Left _) = GT
-    compare' (Left err1) (Left err2) = compareRecord err1 err2
-    compare' (Right res1) (Right res2) = compare res1 res2
-
-instance showResponse :: Show Response where
-  show (Response id eitherErrResult) =
-    "Response " <> show id <> show' eitherErrResult
-
-    where
-    show' (Left err) = "(Left " <> showRecord err <> ")"
-    show' (Right res) = "(Right " <> show res <> ")"
-
-
-type Error = {
+newtype Error = Error {
     code :: ErrorCode
   , message :: String
   , data :: Maybe Json
 }
+derive instance newtypeError :: Newtype Error _
+derive instance genericError :: Generic Error _
+instance showError :: Show Error where
+  show = genericShow
+instance eqError :: Eq Error where
+  eq = genericEq
+instance ordError :: Ord Error where
+  compare = genericCompare
 
 newtype Result = Result Json
 derive newtype instance showResult :: Show Result
@@ -131,7 +116,7 @@ fromJson json = do
         mError = SM.lookup "error" respMap
     in case mResult, mError of
          Just result, Just error -> Left BothResultAndErrorError
-         Nothing, Just errJson -> Left <$> getError errJson
+         Nothing, Just errJson -> Left <<< Error <$> getError errJson
          Just result, Nothing -> Right $ Right $ Result result
          Nothing, Nothing -> Left MissingResultOrErrorError
 
