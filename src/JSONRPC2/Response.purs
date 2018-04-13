@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as Json
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..), note)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
@@ -16,6 +17,7 @@ import Data.StrMap as SM
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
 import JSONRPC2.Identifier as Identifier
+import JSONRPC2.Protocol (ProtocolError, checkProtocol)
 import JSONRPC2.Request (Params, Request(..))
 
 data Response = Response Identifier (Either Error Result)
@@ -76,9 +78,7 @@ errorCodeExplanation = case _ of
 
 data ResponseFormatError =
     ErrorNonObject
-  | ErrorMissingProtocol
-  | ErrorInvalidProtocolType Json
-  | ErrorInvalidProtocol String
+  | ProtocolError ProtocolError
   | ErrorBothResultAndError
   | ErrorMissingResultOrError
   | ErrorInvalidJson Json
@@ -93,19 +93,10 @@ instance showResponseFormatError :: Show ResponseFormatError where
 fromJson :: Json -> Either ResponseFormatError Response
 fromJson json = do
   respMap <- note ErrorNonObject $ Json.toObject json
-  checkProtocol respMap
+  lmap ProtocolError $ checkProtocol respMap
   Response <$> getId respMap <*> getResultOrError respMap
 
   where
-
-  checkProtocol respMap = do
-    protocolJson <- note ErrorMissingProtocol
-      $ SM.lookup Constants.protocolKey respMap
-    protocolStr <- note (ErrorInvalidProtocolType protocolJson)
-      $ Json.toString protocolJson
-    if protocolStr == Constants.protocolValue
-      then Right unit
-      else Left $ ErrorInvalidProtocol protocolStr
 
   getId respMap = do
      idJson <- note ErrorMissingId $ SM.lookup Constants.idKey respMap

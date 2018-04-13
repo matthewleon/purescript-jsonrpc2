@@ -16,6 +16,7 @@ import Data.Tuple (Tuple(..))
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
 import JSONRPC2.Identifier as Id
+import JSONRPC2.Protocol (protocolKey, protocolValue)
 
 newtype Request = Request {
     id :: Maybe Identifier
@@ -38,11 +39,17 @@ derive instance genericParams :: Generic Params _
 instance showParams :: Show Params where
   show = genericShow
 
+data RequestFormatError =
+    ErrorNonObject
+  | ErrorMissingProtocol
+  | ErrorInvalidProtocolType Json
+  | ErrorInvalidProtocol String
+
 toJson :: Request -> Json
 toJson (Request req) = Json.fromObject $ toJObject req
   where
   toJObject {method, params, id} = StrMap.fromFoldable $ [
-        (Tuple Constants.protocolKey $ Json.fromString Constants.protocolValue)
+        (Tuple protocolKey $ Json.fromString protocolValue)
       , (Tuple "method" $ Json.fromString method)
     ] <> maybeSingleton "params" paramsToJson params
       <> maybeSingleton Constants.idKey Id.toJson id
