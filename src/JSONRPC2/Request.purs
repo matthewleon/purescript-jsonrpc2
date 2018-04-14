@@ -2,21 +2,23 @@ module JSONRPC2.Request where
 
 import Prelude
 
-import Data.Argonaut.Core (JArray, JObject, Json)
+import Data.Argonaut.Core (JArray, JObject, Json, foldJson)
 import Data.Argonaut.Core as Json
 import Data.Array as A
+import Data.Bifunctor (lmap)
+import Data.Either (Either(..), note)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Ord (genericCompare)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
-import Data.StrMap as StrMap
+import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
 import JSONRPC2.Identifier as Id
-import JSONRPC2.Protocol (protocolKey, protocolValue)
+import JSONRPC2.Protocol (ProtocolError, checkProtocol, protocolKey, protocolValue)
 
 newtype Request = Request {
     id :: Maybe Identifier
@@ -41,17 +43,59 @@ instance showParams :: Show Params where
 
 data RequestFormatError =
     ErrorNonObject
-  | ErrorMissingProtocol
-  | ErrorInvalidProtocolType Json
-  | ErrorInvalidProtocol String
+  | ProtocolError ProtocolError
+  | ErrorMissingMethod
+  | ErrorInvalidMethodType Json
+  | ErrorInvalidIdType Json
+  | ErrorInvalidParamsType Json
+
+methodKey :: String
+methodKey = "method"
+
+paramsKey :: String
+paramsKey = "params"
+
+fromJson :: Json -> Either RequestFormatError Request
+fromJson json = do
+  reqMap <- note ErrorNonObject $ Json.toObject json
+  lmap ProtocolError $ checkProtocol reqMap
+  id <- getId reqMap
+  method <- getMethod reqMap
+  params <- getParams reqMap
+  pure $ Request { id, method, params }
+
+  where
+
+  getId reqMap =
+    case SM.lookup Constants.idKey reqMap of
+         Nothing -> Right Nothing
+         Just idJson -> Just <$> parseId idJson
+    where
+    parseId idJson = note (ErrorInvalidIdType idJson) $ Id.fromJson idJson
+
+  getMethod reqMap = do
+    methodJson <- note ErrorMissingMethod $ SM.lookup methodKey reqMap
+    note (ErrorInvalidMethodType methodJson) $ Json.toString methodJson
+
+  getParams reqMap = 
+    case SM.lookup paramsKey reqMap of
+         Nothing -> Right Nothing
+         Just paramsJson -> Just <$> parseParams paramsJson
+    where
+    parseParams :: Json -> Either RequestFormatError Params
+    parseParams paramsJson = note (ErrorInvalidParamsType paramsJson) $
+      foldJson no no no no (Just <<< PArray) (Just <<< PObject) paramsJson
+      where
+      no :: forall a. a -> Maybe Params
+      no _ = Nothing
 
 toJson :: Request -> Json
 toJson (Request req) = Json.fromObject $ toJObject req
   where
-  toJObject {method, params, id} = StrMap.fromFoldable $ [
+  toJObject {method, params, id} = SM.fromFoldable $ [
         (Tuple protocolKey $ Json.fromString protocolValue)
-      , (Tuple "method" $ Json.fromString method)
-    ] <> maybeSingleton "params" paramsToJson params
+      , (Tuple methodKey $ Json.fromString method)
+    ] <> maybeSingleton paramsKey paramsToJson params
       <> maybeSingleton Constants.idKey Id.toJson id
     
     where
