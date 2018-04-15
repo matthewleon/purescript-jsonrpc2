@@ -6,7 +6,7 @@ import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as Json
 import Data.Array as A
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), note)
+import Data.Either (Either(..), either, note)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Ord (genericCompare)
@@ -99,17 +99,17 @@ toJson :: Response -> Json
 toJson (Response id errOrResult) = Json.fromObject $ SM.fromFoldable [
       (Tuple protocolKey $ Json.fromString protocolValue)
     , (Tuple Constants.idKey $ Id.toJson id)
-    , toTuple errOrResult
+    , either errJson resultJson errOrResult
   ]
 
     where
-    toTuple :: Either Error Result -> Tuple String Json
-    toTuple (Left (Error {code, message, data: mData})) =
+    errJson (Error {code, message, data: mData}) =
       Tuple "error" $ Json.fromObject $ SM.fromFoldable $ [
           (Tuple "code" $ Json.fromNumber $ ErrorCode.toNumber code)
         , (Tuple "message" $ Json.fromString $ message)
       ] <> maybe [] (A.singleton <<< Tuple "data") mData
-    toTuple (Right (Result resultJson)) = Tuple "result" resultJson
+
+    resultJson (Result json) = Tuple "result" json
 
 respond
   :: ({ method :: String, params :: Maybe Params } -> Either Error Result)
