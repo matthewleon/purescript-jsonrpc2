@@ -4,21 +4,24 @@ import Prelude
 
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as Json
+import Data.Array as A
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), note)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Ord (genericCompare)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Int (fromNumber)
-import Data.Maybe (Maybe(..), maybe')
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.StrMap as SM
+import Data.Tuple (Tuple(..))
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
-import JSONRPC2.Identifier as Identifier
-import JSONRPC2.Protocol (ProtocolError, checkProtocol)
+import JSONRPC2.Identifier as Id
+import JSONRPC2.Protocol (ProtocolError, checkProtocol, protocolKey, protocolValue)
 import JSONRPC2.Request (Params, Request(..))
+import JSONRPC2.Response.ErrorCode (ErrorCode)
+import JSONRPC2.Response.ErrorCode as ErrorCode
 
 data Response = Response Identifier (Either Error Result)
 
@@ -47,35 +50,6 @@ derive newtype instance showResult :: Show Result
 derive newtype instance eqResult :: Eq Result
 derive newtype instance ordResult :: Ord Result
 
-data ErrorCode =
-    CodeParseError
-  | CodeInvalidRequest
-  | CodeMethodNotFound
-  | CodeInvalidParams
-  | CodeInternalError
-  | CodeServerError Number
-  | CodeOther Number
-derive instance eqErrorCode :: Eq ErrorCode
-derive instance ordErrorCode :: Ord ErrorCode
-derive instance genericErrorCode :: Generic ErrorCode _
-instance showErrorCode :: Show ErrorCode where
-  show = genericShow
-
-errorCodeExplanation :: ErrorCode -> String
-errorCodeExplanation = case _ of
-  CodeParseError -> "Invalid JSON was received by the server, \
-                    \or an error occured on the server \
-                    \while parsing the JSON text."
-  CodeInvalidRequest -> "Invalid request: \
-                       \The JSON sent is not a valid request object."
-  CodeMethodNotFound -> "Method not found: \
-                        \The method does not exist / is not available."
-  CodeInvalidParams -> "Invalid params: Invalid method parameter(s)."
-  CodeInternalError -> "Internal error: Internal JSON-RPC error."
-  CodeServerError n -> "Server error: "
-                       <> (maybe' (\_ -> show n) show $ fromNumber n)
-  CodeOther n -> "Other error (check message): " <> show n
-
 data ResponseFormatError =
     ErrorNonObject
   | ProtocolError ProtocolError
@@ -100,7 +74,7 @@ fromJson json = do
 
   getId respMap = do
      idJson <- note ErrorMissingId $ SM.lookup Constants.idKey respMap
-     note (ErrorInvalidIdType idJson) $ Identifier.fromJson idJson
+     note (ErrorInvalidIdType idJson) $ Id.fromJson idJson
 
   getResultOrError respMap =
     let mResult = SM.lookup "result" respMap
@@ -116,23 +90,26 @@ fromJson json = do
     getError errJson = note (ErrorInvalidJson errJson) do
        errMap <- Json.toObject errJson
        let d = SM.lookup "data" errMap
-       code <- errorCodeFromNumber
+       code <- ErrorCode.fromNumber
                <$> (Json.toNumber =<< SM.lookup "code" errMap)
        message <- Json.toString =<< SM.lookup "message" errMap
        pure {code, message, data: d}
 
-      where
+toJson :: Response -> Json
+toJson (Response id errOrResult) = Json.fromObject $ SM.fromFoldable [
+      (Tuple protocolKey $ Json.fromString protocolValue)
+    , (Tuple Constants.idKey $ Id.toJson id)
+    , toTuple errOrResult
+  ]
 
-      errorCodeFromNumber :: Number -> ErrorCode
-      errorCodeFromNumber = case _ of
-        -32700.0 -> CodeParseError
-        -32600.0 -> CodeInvalidRequest
-        -32601.0 -> CodeMethodNotFound
-        -32602.0 -> CodeInvalidParams
-        -32603.0 -> CodeInternalError
-        code -> code # if (code >= -3200.0) && (code <= -32099.0)
-                  then CodeServerError
-                  else CodeOther
+    where
+    toTuple :: Either Error Result -> Tuple String Json
+    toTuple (Left (Error {code, message, data: mData})) =
+      Tuple "error" $ Json.fromObject $ SM.fromFoldable $ [
+          (Tuple "code" $ Json.fromNumber $ ErrorCode.toNumber code)
+        , (Tuple "message" $ Json.fromString $ message)
+      ] <> maybe [] (A.singleton <<< Tuple "data") mData
+    toTuple (Right (Result resultJson)) = Tuple "result" resultJson
 
 respond
   :: ({ method :: String, params :: Maybe Params } -> Either Error Result)
