@@ -23,6 +23,7 @@ requestSpec =
           , method: "some method"
           , params: Just $ Request.PArray [Json.fromString "StringParam", Json.fromNumber (123.456)]
         }
+
     describe "toJson" do
       let reqArrayParamsStr =  "{\
           \\"jsonrpc\":\"2.0\",\
@@ -30,9 +31,11 @@ requestSpec =
           \\"params\":[\"StringParam\",123.456],\
           \\"id\":\"stringId\"\
           \}"
+
       it "serializes requests correctly" do
          Right (Request.toJson reqArrayParams)
            `shouldEqual` jsonParser reqArrayParamsStr
+
       it "roundtrips request serialization" $
         quickCheck $
           (genRequest <#> \req -> fromJson (toJson req) == Right req)
