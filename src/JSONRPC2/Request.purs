@@ -48,6 +48,11 @@ data RequestFormatError =
   | ErrorInvalidMethodType Json
   | ErrorInvalidIdType Json
   | ErrorInvalidParamsType Json
+derive instance eqRequestFormatError :: Eq RequestFormatError
+derive instance ordRequestFormatError :: Ord RequestFormatError
+derive instance genericRequestFormatError :: Generic RequestFormatError _
+instance showRequestFormatError :: Show RequestFormatError where
+  show = genericShow
 
 methodKey :: String
 methodKey = "method"

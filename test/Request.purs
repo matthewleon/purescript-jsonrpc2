@@ -7,12 +7,15 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import JSONRPC2.Identifier (Identifier(..))
-import JSONRPC2.Request (Request(..))
+import JSONRPC2.Request (Request(..), fromJson, toJson)
 import JSONRPC2.Request as Request
+import Test.QuickCheck.Gen (Gen)
+import Test.Request.Gen (genRequest)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
+import Test.Spec.QuickCheck (QCRunnerEffects, quickCheck)
 
-requestSpec :: forall r. Spec r Unit
+requestSpec :: forall r. Spec (QCRunnerEffects r) Unit
 requestSpec =
   describe "Request" do
     let reqArrayParams = Request {
@@ -30,3 +33,7 @@ requestSpec =
       it "serializes requests correctly" do
          Right (Request.toJson reqArrayParams)
            `shouldEqual` jsonParser reqArrayParamsStr
+      it "roundtrips request serialization" $
+        quickCheck $
+          (genRequest <#> \req -> fromJson (toJson req) == Right req)
+            :: Gen Boolean
