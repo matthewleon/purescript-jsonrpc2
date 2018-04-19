@@ -4,11 +4,12 @@ import Prelude
 
 import Data.Argonaut.Core as Json
 import Data.Argonaut.Parser (jsonParser)
-import Data.Either (Either(..))
+import Data.Either (Either(..), fromRight)
 import Data.Maybe (Maybe(..))
 import JSONRPC2.Identifier (Identifier(..))
 import JSONRPC2.Request (Request(..), fromJson, toJson)
 import JSONRPC2.Request as Request
+import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck.Gen (Gen)
 import Test.Request.Gen (genRequest)
 import Test.Spec (Spec, describe, it)
@@ -24,19 +25,23 @@ requestSpec =
           , params: Just $ Request.PArray [Json.fromString "StringParam", Json.fromNumber (123.456)]
         }
 
-    describe "toJson" do
-      let reqArrayParamsStr =  "{\
+        reqArrayParamsJson = unsafePartial fromRight $ jsonParser "{\
           \\"jsonrpc\":\"2.0\",\
           \\"method\":\"some method\",\
           \\"params\":[\"StringParam\",123.456],\
           \\"id\":\"stringId\"\
           \}"
 
-      it "serializes requests correctly" do
-         Right (Request.toJson reqArrayParams)
-           `shouldEqual` jsonParser reqArrayParamsStr
+    describe "fromJson" $
+      it "deserializes requests correctly" $
+          Request.fromJson reqArrayParamsJson `shouldEqual` Right reqArrayParams
 
-      it "roundtrips request serialization" $
+    describe "toJson" $
+      it "serializes requests correctly" $
+         Request.toJson reqArrayParams `shouldEqual` reqArrayParamsJson
+
+    describe "bidirectional serialization" $
+      it "roundtrips" $
         quickCheck $
           (genRequest <#> \req -> fromJson (toJson req) == Right req)
             :: Gen Boolean
