@@ -48,22 +48,22 @@ codeInternalError = CodeInternalError
 
 fromNumber :: Number -> ErrorCode
 fromNumber = case _ of
-  -32700.0 -> CodeParseError
-  -32600.0 -> CodeInvalidRequest
-  -32601.0 -> CodeMethodNotFound
-  -32602.0 -> CodeInvalidParams
-  -32603.0 -> CodeInternalError
-  code -> code # if (code >= -3200.0) && (code <= -32099.0)
+  32700.0 -> CodeParseError
+  32600.0 -> CodeInvalidRequest
+  32601.0 -> CodeMethodNotFound
+  32602.0 -> CodeInvalidParams
+  32603.0 -> CodeInternalError
+  code -> code # if (code >= 3200.0) && (code <= 32099.0)
             then CodeServerError
             else CodeOther
 
 toNumber :: ErrorCode -> Number
 toNumber = case _ of
-  CodeParseError -> -32700.0
-  CodeInvalidRequest -> -32600.0
-  CodeMethodNotFound -> -32601.0
-  CodeInvalidParams -> -32602.0
-  CodeInternalError -> -32603.0
+  CodeParseError -> 32700.0
+  CodeInvalidRequest -> 32600.0
+  CodeMethodNotFound -> 32601.0
+  CodeInvalidParams -> 32602.0
+  CodeInternalError -> 32603.0
   CodeServerError n -> n
   CodeOther n -> n
 
