@@ -25,10 +25,12 @@ genResponse
   => m Response
 genResponse = Response <$> genIdentifier <*> genEither genError genResult
   where
-  genError = map Response.Error $ { code: _, message: _, data: _}
-    <$> genErrorCode
-    <*> genAsciiString
-    <*> genMaybe genJson
+  genError = do
+    code <- genErrorCode
+    message <- genAsciiString
+    _data <- genMaybe genJson -- "data" is a reserved word
+    pure $ Response.Error { code, message, data: _data}
+
     where
     genErrorCode = oneOf $ unsafePartial fromJust $ NEA.fromArray [
       pure ErrorCode.codeParseError

@@ -23,10 +23,11 @@ genRequest
   => MonadRec m
   => Lazy (m Json)
   => m Request
-genRequest = map Request $ { id: _, method: _, params: _}
-    <$> genId
-    <*> genMethod
-    <*> genParams
+genRequest = do
+  id <- genId
+  method <- genMethod
+  params <- genParams
+  pure $ Request {id, method, params}
 
   where
   genId = genMaybe genIdentifier
