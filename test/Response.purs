@@ -15,8 +15,8 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.QuickCheck (QCRunnerEffects, quickCheck)
 
-responseSpec :: forall r. Spec (QCRunnerEffects r) Unit
-responseSpec = 
+spec :: forall r. Spec (QCRunnerEffects r) Unit
+spec =
   describe "Response" do
     let successJson = unsafePartial fromRight
           $ jsonParser "{\"jsonrpc\": \"2.0\", \"result\": -19, \"id\": 2}"

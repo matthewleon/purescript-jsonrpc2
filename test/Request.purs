@@ -16,8 +16,8 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.QuickCheck (QCRunnerEffects, quickCheck)
 
-requestSpec :: forall r. Spec (QCRunnerEffects r) Unit
-requestSpec =
+spec :: forall r. Spec (QCRunnerEffects r) Unit
+spec =
   describe "Request" do
     let reqArrayParams = Request {
             id: Just $ IdStr "stringId"
