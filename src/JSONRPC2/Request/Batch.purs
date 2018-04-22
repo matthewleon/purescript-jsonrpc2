@@ -17,6 +17,7 @@ import Data.Generic.Rep.Ord (genericCompare)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
+import JSONRPC2.Batch as Batch
 import JSONRPC2.Request (Request, RequestFormatError)
 import JSONRPC2.Request as Request
 
@@ -39,4 +40,4 @@ fromJson = map arrayToBatch <<< Json.toArray
     {left, right} = partitionMap id eitherReqs
 
 toJson :: Batch -> Json
-toJson (Batch reqs) = Json.fromArray $ map Request.toJson reqs
+toJson = Batch.toJson Request.toJson
