@@ -8,10 +8,7 @@ module JSONRPC2.Response.Batch (
 import Prelude
 
 import Data.Argonaut.Core (Json)
-import Data.Argonaut.Core as Json
-import Data.Array as A
-import Data.Either (Either(..))
-import Data.Filterable (partitionMap)
+import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Ord (genericCompare)
@@ -32,13 +29,10 @@ instance eqBatch :: Eq Batch where
 instance ordBatch :: Ord Batch where
   compare = genericCompare
 
-fromJson :: Json -> Maybe (Either (Array (Either ResponseFormatError Response)) Batch)
-fromJson = map arrayToBatch <<< Json.toArray
-  where
-  arrayToBatch js = if A.null left then Right (Batch right) else Left eitherReqs
-    where
-    eitherReqs = Response.fromJson <$> js
-    {left, right} = partitionMap id eitherReqs
+fromJson
+  :: Json
+  -> Maybe (Either (Array (Either ResponseFormatError Response)) Batch)
+fromJson = Batch.fromJson Response.fromJson
 
 toJson :: Batch -> Json
 toJson = Batch.toJson Response.toJson
