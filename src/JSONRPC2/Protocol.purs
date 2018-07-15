@@ -2,13 +2,13 @@ module JSONRPC2.Protocol where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
-import Data.Argonaut.Core as Json
 import Data.Either (Either(..), note)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.StrMap (StrMap)
-import Data.StrMap as SM
+import Foreign.Object (Object)
+import Foreign.Object as SM
+import JSONRPC2.Json (Json)
+import JSONRPC2.Json as Json
 
 data ProtocolError =
     ErrorMissingProtocol
@@ -26,7 +26,7 @@ protocolKey = "jsonrpc"
 protocolValue :: String
 protocolValue = "2.0"
 
-checkProtocol :: StrMap Json -> Either ProtocolError Unit
+checkProtocol :: Object Json -> Either ProtocolError Unit
 checkProtocol jMap = do
   protocolJson <- note ErrorMissingProtocol $ SM.lookup protocolKey jMap
   protocolStr <- note (ErrorInvalidProtocolType protocolJson)

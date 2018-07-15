@@ -5,13 +5,13 @@ module JSONRPC2.Batch (
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
-import Data.Argonaut.Core as Json
 import Data.Array as A
 import Data.Either (Either(..))
 import Data.Filterable (partitionMap)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap, wrap)
+import JSONRPC2.Json (Json)
+import JSONRPC2.Json as Json
 
 fromJson
   :: forall batch t err
@@ -24,7 +24,7 @@ fromJson tFromJson = map arrayToBatch <<< Json.toArray
   arrayToBatch js = if A.null left then Right (wrap right) else Left eitherReqs
     where
     eitherReqs = tFromJson <$> js
-    {left, right} = partitionMap id eitherReqs
+    {left, right} = partitionMap identity eitherReqs
 
 toJson
   :: forall batch t

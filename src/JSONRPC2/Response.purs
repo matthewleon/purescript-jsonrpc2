@@ -2,22 +2,20 @@ module JSONRPC2.Response where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
-import Data.Argonaut.Core as Json
 import Data.Array as A
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either, note)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Eq (genericEq)
-import Data.Generic.Rep.Ord (genericCompare)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
-import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
+import Foreign.Object as SM
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
 import JSONRPC2.Identifier as Id
+import JSONRPC2.Json (Json)
+import JSONRPC2.Json as Json
 import JSONRPC2.Protocol (ProtocolError, checkProtocol, protocolKey, protocolValue)
 import JSONRPC2.Request (Params, Request(..))
 import JSONRPC2.Response.ErrorCode (ErrorCode)
@@ -37,13 +35,10 @@ newtype Error = Error {
   , data :: Maybe Json
 }
 derive instance newtypeError :: Newtype Error _
-derive instance genericError :: Generic Error _
+derive instance eqError :: Eq Error
+derive instance ordError :: Ord Error
 instance showError :: Show Error where
-  show = genericShow
-instance eqError :: Eq Error where
-  eq = genericEq
-instance ordError :: Ord Error where
-  compare = genericCompare
+  show (Error e) = "Error " <> show e
 
 newtype Result = Result Json
 derive newtype instance showResult :: Show Result

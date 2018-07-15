@@ -2,22 +2,21 @@ module JSONRPC2.Request where
 
 import Prelude
 
-import Data.Argonaut.Core (JArray, JObject, Json, foldJson)
-import Data.Argonaut.Core as Json
 import Data.Array as A
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), note)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Eq (genericEq)
-import Data.Generic.Rep.Ord (genericCompare)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
-import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
+import Foreign.Object (Object)
+import Foreign.Object as SM
 import JSONRPC2.Constants as Constants
 import JSONRPC2.Identifier (Identifier)
 import JSONRPC2.Identifier as Id
+import JSONRPC2.Json (Json, caseJson)
+import JSONRPC2.Json as Json
 import JSONRPC2.Protocol (ProtocolError, checkProtocol, protocolKey, protocolValue)
 
 newtype Request = Request {
@@ -26,15 +25,12 @@ newtype Request = Request {
   , params :: Maybe Params
 }
 derive instance newtypeRequest :: Newtype Request _
-derive instance genericRequest :: Generic Request _
-instance showRequest :: Show Request where
-  show = genericShow
-instance eqRequest :: Eq Request where
-  eq = genericEq
-instance ordRequest :: Ord Request where
-  compare = genericCompare
+instance showRequest :: Show Request
+  where show (Request r) = "Request " <> show r
+derive instance eqRequest :: Eq Request
+derive instance ordRequest :: Ord Request
 
-data Params = PArray JArray | PObject JObject
+data Params = PArray (Array Json) | PObject (Object Json)
 derive instance eqParams :: Eq Params
 derive instance ordParams :: Ord Params
 derive instance genericParams :: Generic Params _
@@ -89,7 +85,7 @@ fromJson json = do
     where
     parseParams :: Json -> Either RequestFormatError Params
     parseParams paramsJson = note (ErrorInvalidParamsType paramsJson) $
-      foldJson no no no no (Just <<< PArray) (Just <<< PObject) paramsJson
+      caseJson no no no no (Just <<< PArray) (Just <<< PObject) paramsJson
       where
       no :: forall a. a -> Maybe Params
       no _ = Nothing

@@ -2,30 +2,23 @@ module JSONRPC2.Request.Notification where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
-import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Eq (genericEq)
-import Data.Generic.Rep.Ord (genericCompare)
-import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
-import Data.Record as Record
 import Data.Symbol (SProxy(..))
+import JSONRPC2.Json (Json)
 import JSONRPC2.Request (Params, Request(..))
 import JSONRPC2.Request as Request
+import Record as Record
 
 newtype Notification = Notification {
     method :: String
   , params :: Maybe Params
 }
 derive instance newtypeNotification :: Newtype Notification _
-derive instance genericNotification :: Generic Notification _
+derive instance eqNotification :: Eq Notification
+derive instance ordNotification :: Ord Notification
 instance showNotification :: Show Notification where
-  show = genericShow
-instance eqNotification :: Eq Notification where
-  eq = genericEq
-instance ordNotification :: Ord Notification where
-  compare = genericCompare
+  show (Notification n) = "Notification " <> show n
 
 toRequest :: Notification -> Request
 toRequest (Notification n) =

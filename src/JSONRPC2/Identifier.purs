@@ -2,8 +2,8 @@ module JSONRPC2.Identifier where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, foldJson, jsonNull)
-import Data.Argonaut.Core as Json
+import JSONRPC2.Json (Json, caseJson, jsonNull)
+import JSONRPC2.Json as Json
 import Data.Maybe (Maybe(..))
 
 data Identifier = IdStr String | IdNum Number | IdNull
@@ -21,7 +21,7 @@ toJson (IdNum n) = Json.fromNumber n
 toJson IdNull = jsonNull
 
 fromJson :: Json -> Maybe Identifier
-fromJson = foldJson
+fromJson = caseJson
   (const $ Just IdNull)
   (const Nothing)
   (Just <<< IdNum)
