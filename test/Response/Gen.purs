@@ -6,16 +6,16 @@ import Control.Lazy (class Lazy)
 import Control.Monad.Gen (class MonadGen, chooseFloat, oneOf)
 import Control.Monad.Gen.Common (genEither, genMaybe)
 import Control.Monad.Rec.Class (class MonadRec)
-import Data.Argonaut.Core (Json)
-import Data.Argonaut.Gen (genJson)
 import Data.Array.NonEmpty as NEA
 import Data.Maybe (fromJust)
 import Data.String.Gen (genAsciiString)
+import JSONRPC2.Json (Json)
 import JSONRPC2.Response (Response(..))
 import JSONRPC2.Response as Response
 import JSONRPC2.Response.ErrorCode as ErrorCode
 import Partial.Unsafe (unsafePartial)
 import Test.Identifier.Gen (genIdentifier)
+import Test.Json.Gen (genJson)
 
 genResponse
   :: forall m
