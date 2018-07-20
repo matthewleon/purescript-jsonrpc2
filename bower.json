@@ -13,6 +13,7 @@
     "purescript-filterable": "^3.0.1"
   },
   "devDependencies": {
-    "purescript-spec": "^3.0.0"
+    "purescript-spec": "^3.0.0",
+    "purescript-spec-quickcheck": "^3.0.0"
   }
 }
