@@ -13,7 +13,8 @@ BOWER=$(npm bin)/bower
 DEP_DIR="bower_components"
 PURS=$(npm bin)/psa
 
-SCRIPT_REL_PATH='src/**/*.purs'
-DEPS="${DEP_DIR}/purescript-*/${SCRIPT_REL_PATH}"
-SRC="./${SCRIPT_REL_PATH}"
+PURS_REL_PATH='**/*.purs'
+SCRIPT_REL_PATH="src/$PURS_REL_PATH"
+DEPS="${DEP_DIR}/purescript-*/$SCRIPT_REL_PATH"
+SRC="./$SCRIPT_REL_PATH"
 "$PURS" compile "$DEPS" "$SRC"
