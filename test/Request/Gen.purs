@@ -6,6 +6,7 @@ import Control.Lazy (class Lazy)
 import Control.Monad.Gen (class MonadGen, oneOf, unfoldable)
 import Control.Monad.Gen.Common (genMaybe)
 import Control.Monad.Rec.Class (class MonadRec)
+import Data.Argonaut.Core as Argonaut
 import Data.Array.NonEmpty as NEA
 import Data.Maybe (fromJust)
 import Data.String.Gen (genAsciiString)
@@ -21,7 +22,7 @@ genRequest
   :: forall m
    . MonadGen m
   => MonadRec m
-  => Lazy (m Json)
+  => Lazy (m Argonaut.Json)
   => m Request
 genRequest = do
   id <- genId

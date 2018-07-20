@@ -6,10 +6,10 @@ import Control.Lazy (class Lazy)
 import Control.Monad.Gen (class MonadGen, chooseFloat, oneOf)
 import Control.Monad.Gen.Common (genEither, genMaybe)
 import Control.Monad.Rec.Class (class MonadRec)
+import Data.Argonaut.Core as Argonaut
 import Data.Array.NonEmpty as NEA
 import Data.Maybe (fromJust)
 import Data.String.Gen (genAsciiString)
-import JSONRPC2.Json (Json)
 import JSONRPC2.Response (Response(..))
 import JSONRPC2.Response as Response
 import JSONRPC2.Response.ErrorCode as ErrorCode
@@ -21,7 +21,7 @@ genResponse
   :: forall m
    . MonadGen m
   => MonadRec m
-  => Lazy (m Json)
+  => Lazy (m Argonaut.Json)
   => m Response
 genResponse = Response <$> genIdentifier <*> genEither genError genResult
   where

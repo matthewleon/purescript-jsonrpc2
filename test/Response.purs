@@ -2,10 +2,11 @@ module Test.Response where
 
 import Prelude
 
-import Data.Argonaut.Core as Json
 import Data.Argonaut.Parser (jsonParser)
 import Data.Either (Either(..), fromRight)
+import Data.Newtype (wrap)
 import JSONRPC2.Identifier (Identifier(..))
+import JSONRPC2.Json as Json
 import JSONRPC2.Response (Response(..), fromJson, toJson)
 import JSONRPC2.Response as Response
 import Partial.Unsafe (unsafePartial)
@@ -13,12 +14,12 @@ import Test.QuickCheck.Gen (Gen)
 import Test.Response.Gen (genResponse)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.QuickCheck (QCRunnerEffects, quickCheck)
+import Test.Spec.QuickCheck (quickCheck)
 
-spec :: forall r. Spec (QCRunnerEffects r) Unit
+spec :: Spec Unit
 spec =
   describe "Response" do
-    let successJson = unsafePartial fromRight
+    let successJson = wrap $ unsafePartial fromRight
           $ jsonParser "{\"jsonrpc\": \"2.0\", \"result\": -19, \"id\": 2}"
         errorStr = "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32700, \"message\": \"Parse error\"}, \"id\": null}"
 

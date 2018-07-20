@@ -10,9 +10,9 @@ import JSONRPC2.Request.Batch (fromJson, toJson)
 import Test.QuickCheck.Gen (Gen)
 import Test.Request.Gen (genRequest)
 import Test.Spec (Spec, describe, it)
-import Test.Spec.QuickCheck (QCRunnerEffects, quickCheck)
+import Test.Spec.QuickCheck (quickCheck)
 
-spec :: forall r. Spec (QCRunnerEffects r) Unit
+spec :: Spec Unit
 spec = describe "Request.Batch" $
   describe "bidirectional serialization" $
     it "roundtrips" $
