@@ -1,21 +1,17 @@
 #!/bin/sh
 
-DEP_DIR="bower_components"
-
-if [ ! -d ${DEP_DIR} ]; then
-  BOWER=${BOWER:-$(command -v bower)}
-  if [ -z $BOWER ]; then
-    >&2 echo "build failed: please install bower (https://bower.io/#install-bower)"
-    exit 1
-  fi
-  $BOWER install --production || exit 1
-fi
-
-PURS=${PURS:-$(command -v purs)}
-if [ -z $PURS ]; then
-  >&2 echo 'build failed: please install purescript (http://www.purescript.org/)'
+NPM=${NPM:=$(command -v npm)}
+if [ -z $NPM ]; then
+  >&2 echo 'build failed: please install nodejs and npm (https://nodejs.org/)'
   exit 1
 fi
+"$NPM" install
+
+BOWER=$(npm bin)/bower
+"$BOWER" install --production || exit 1
+
+DEP_DIR="bower_components"
+PURS=$(npm bin)/psa
 
 SCRIPT_REL_PATH='src/**/*.purs'
 DEPS="${DEP_DIR}/purescript-*/${SCRIPT_REL_PATH}"
