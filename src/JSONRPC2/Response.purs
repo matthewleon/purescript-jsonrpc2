@@ -7,6 +7,7 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either, note)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
+import Data.Int (fromNumber, toNumber)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.Tuple (Tuple(..))
@@ -85,8 +86,8 @@ fromJson json = do
     getError errJson = note (ErrorInvalidJson errJson) do
        errMap <- Json.toObject errJson
        let d = SM.lookup "data" errMap
-       code <- ErrorCode.fromNumber
-               <$> (Json.toNumber =<< SM.lookup "code" errMap)
+       code <- ErrorCode.fromInt
+               <$> (fromNumber =<< Json.toNumber =<< SM.lookup "code" errMap)
        message <- Json.toString =<< SM.lookup "message" errMap
        pure {code, message, data: d}
 
@@ -100,7 +101,7 @@ toJson (Response id errOrResult) = Json.fromObject $ SM.fromFoldable [
     where
     errJson (Error {code, message, data: mData}) =
       Tuple "error" $ Json.fromObject $ SM.fromFoldable $ [
-          (Tuple "code" $ Json.fromNumber $ ErrorCode.toNumber code)
+          (Tuple "code" $ Json.fromNumber $ toNumber $ ErrorCode.toInt code)
         , (Tuple "message" $ Json.fromString $ message)
       ] <> maybe [] (A.singleton <<< Tuple "data") mData
 

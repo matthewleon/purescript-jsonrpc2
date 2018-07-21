@@ -5,8 +5,8 @@ module JSONRPC2.Response.ErrorCode (
   , codeMethodNotFound
   , codeInvalidParams
   , codeInternalError
-  , fromNumber
-  , toNumber
+  , fromInt
+  , toInt
   , explanation
   ) where
 
@@ -14,8 +14,6 @@ import Prelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Int as Int
-import Data.Maybe (maybe')
 
 data ErrorCode =
     CodeParseError
@@ -23,8 +21,8 @@ data ErrorCode =
   | CodeMethodNotFound
   | CodeInvalidParams
   | CodeInternalError
-  | CodeServerError Number
-  | CodeOther Number
+  | CodeServerError Int
+  | CodeOther Int
 derive instance eqErrorCode :: Eq ErrorCode
 derive instance ordErrorCode :: Ord ErrorCode
 derive instance genericErrorCode :: Generic ErrorCode _
@@ -46,24 +44,24 @@ codeInvalidParams = CodeInvalidParams
 codeInternalError :: ErrorCode
 codeInternalError = CodeInternalError
 
-fromNumber :: Number -> ErrorCode
-fromNumber = case _ of
-  32700.0 -> CodeParseError
-  32600.0 -> CodeInvalidRequest
-  32601.0 -> CodeMethodNotFound
-  32602.0 -> CodeInvalidParams
-  32603.0 -> CodeInternalError
-  code -> code # if (code >= 3200.0) && (code <= 32099.0)
+fromInt :: Int -> ErrorCode
+fromInt = case _ of
+  32700 -> CodeParseError
+  32600 -> CodeInvalidRequest
+  32601 -> CodeMethodNotFound
+  32602 -> CodeInvalidParams
+  32603 -> CodeInternalError
+  code -> code # if (code >= 3200) && (code <= 32099)
             then CodeServerError
             else CodeOther
 
-toNumber :: ErrorCode -> Number
-toNumber = case _ of
-  CodeParseError -> 32700.0
-  CodeInvalidRequest -> 32600.0
-  CodeMethodNotFound -> 32601.0
-  CodeInvalidParams -> 32602.0
-  CodeInternalError -> 32603.0
+toInt :: ErrorCode -> Int
+toInt = case _ of
+  CodeParseError -> 32700
+  CodeInvalidRequest -> 32600
+  CodeMethodNotFound -> 32601
+  CodeInvalidParams -> 32602
+  CodeInternalError -> 32603
   CodeServerError n -> n
   CodeOther n -> n
 
@@ -78,6 +76,5 @@ explanation = case _ of
                         \The method does not exist / is not available."
   CodeInvalidParams -> "Invalid params: Invalid method parameter(s)."
   CodeInternalError -> "Internal error: Internal JSON-RPC error."
-  CodeServerError n -> "Server error: "
-                       <> maybe' (\_ -> show n) show (Int.fromNumber n)
+  CodeServerError n -> "Server error: " <> show n
   CodeOther n -> "Other error (check message): " <> show n
