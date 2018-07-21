@@ -7,6 +7,7 @@ import Data.Either (Either(..), fromRight)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import JSONRPC2.Identifier (Identifier(..))
+import JSONRPC2.Json (Json)
 import JSONRPC2.Json as Json
 import JSONRPC2.Request (Request(..), fromJson, toJson)
 import JSONRPC2.Request as Request
@@ -37,12 +38,15 @@ spec =
       it "deserializes requests correctly" $
           Request.fromJson reqArrayParamsJson `shouldEqual` Right reqArrayParams
 
-    describe "toJson" $
+    describe "toJson" $ do
       it "serializes requests correctly" $
          Request.toJson reqArrayParams `shouldEqual` reqArrayParamsJson
+      it "passes JSON Schema validation" $
+         quickCheck $ (validateRequest <<< toJson <$> genRequest) :: Gen Boolean
 
-    describe "bidirectional serialization" $
-      it "roundtrips" $
-        quickCheck $
-          (genRequest <#> \req -> fromJson (toJson req) == Right req)
-            :: Gen Boolean
+    it "roundtrips serialization" $
+      quickCheck $
+        (genRequest <#> \req -> fromJson (toJson req) == Right req)
+          :: Gen Boolean
+
+foreign import validateRequest :: Json -> Boolean
